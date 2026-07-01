@@ -21,6 +21,10 @@ spec:
         app.kubernetes.io/name: {{ include "govtool.name" $ }}
         app.kubernetes.io/component: {{ $name }}
     spec:
+      {{- with $svc.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+      {{- end }}
       containers:
         - name: {{ $name }}
           image: "{{ $svc.image.repository }}:{{ $svc.image.tag }}"
@@ -40,23 +44,44 @@ spec:
           env:
             {{- range $key, $value := . }}
             - name: {{ $key }}
-              value: {{ $value | quote }}
+              value: {{ tpl ($value | toString) $ | quote }}
+            {{- end }}
+          {{- end }}
+          {{- with $svc.envFromSecrets }}
+          envFrom:
+            {{- range . }}
+            - secretRef:
+                name: {{ . }}
             {{- end }}
           {{- end }}
           resources:
 {{ toYaml $.Values.resources.default | indent 12 }}
-          {{- if and $svc.configMount $svc.configMount.enabled }}
+          {{- if or (and $svc.configMount $svc.configMount.enabled) (and $svc.volume $svc.volume.enabled) }}
           volumeMounts:
+            {{- if and $svc.configMount $svc.configMount.enabled }}
             - name: config
               mountPath: {{ $svc.configMount.mountPath }}
               subPath: {{ $svc.configMount.subPath }}
               readOnly: true
+            {{- end }}
+            {{- if and $svc.volume $svc.volume.enabled }}
+            - name: {{ $svc.volume.name }}
+              mountPath: {{ $svc.volume.mountPath }}
+            {{- end }}
           {{- end }}
-      {{- if and $svc.configMount $svc.configMount.enabled }}
+      {{- if or (and $svc.configMount $svc.configMount.enabled) (and $svc.volume $svc.volume.enabled) }}
       volumes:
+        {{- if and $svc.configMount $svc.configMount.enabled }}
         - name: config
           secret:
             secretName: {{ $svc.configMount.secretName }}
+        {{- end }}
+        {{- if and $svc.volume $svc.volume.enabled }}
+        - name: {{ $svc.volume.name }}
+          hostPath:
+            path: {{ $svc.volume.hostPath }}
+            type: DirectoryOrCreate
+        {{- end }}
       {{- end }}
 {{- end }}
 {{- end }}
