@@ -41,15 +41,12 @@ spec:
                 sleep 5
               done
 
-              pg_restore \
-                --clean \
-                --if-exists \
-                --no-owner \
-                --no-privileges \
+              psql \
                 -h "$PGHOST" \
                 -U "$PGUSER" \
                 -d "$PGDATABASE" \
-                /dump/{{ .Values.pdfDbMigration.dumpFileName }}
+                -v ON_ERROR_STOP=1 \
+                -f /migration/{{ .Values.pdfDbMigration.fileName }}
           volumeMounts:
             - name: dump
               mountPath: /dump

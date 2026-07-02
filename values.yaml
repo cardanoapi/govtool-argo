@@ -3,9 +3,9 @@ global:
   imagePullPolicy: IfNotPresent
 
 pdfDbMigration:
-    enabled: false
-    dumpSecretName: govtool-pdf-db-dump
-    dumpFileName: proposal_pillar.dump
+    enabled: true
+    configMapName: govtool-pdf-db-migration
+    fileName: schema.sql
     dbHost: govtool-pdf-db
     dbName: postgres
     dbUserSecret: govtool-pdf-db
@@ -57,7 +57,7 @@ services:
 
   metadata:
     enabled: true
-    replicaCount: 2
+    replicaCount: 1
     image:
       repository: ghcr.io/intersectmbo/govtool-metadata-validation
       tag: ff5e43c1d69eac920607d325c7965d5dadc68cc3
