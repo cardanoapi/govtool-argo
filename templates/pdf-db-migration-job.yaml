@@ -53,6 +53,7 @@ spec:
               readOnly: true
       volumes:
         - name: migration
-          secret:
-            secretName: {{ .Values.pdfDbMigration.configMapName }}
+          configMap:
+            name: {{ .Values.pdfDbMigration.configMapName }}
+            
 {{- end }}
