@@ -57,7 +57,7 @@ services:
 
   metadata:
     enabled: true
-    replicaCount: 1
+    replicaCount: 2
     image:
       repository: ghcr.io/intersectmbo/govtool-metadata-validation
       tag: ff5e43c1d69eac920607d325c7965d5dadc68cc3
