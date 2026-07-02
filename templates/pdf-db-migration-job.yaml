@@ -48,11 +48,11 @@ spec:
                 -v ON_ERROR_STOP=1 \
                 -f /migration/{{ .Values.pdfDbMigration.fileName }}
           volumeMounts:
-            - name: dump
-              mountPath: /dump
+            - name: migration
+              mountPath: /migration
               readOnly: true
       volumes:
-        - name: dump
+        - name: migration
           secret:
-            secretName: {{ .Values.pdfDbMigration.dumpSecretName }}
+            secretName: {{ .Values.pdfDbMigration.configMapName }}
 {{- end }}
