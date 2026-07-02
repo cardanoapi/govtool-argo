@@ -4310,10 +4310,10 @@ COPY public.country_lists (id, country_name, alfa_2_code, alfa_3_code, created_a
 --
 
 COPY public.governance_action_types (id, gov_action_type_name, created_at, updated_at, published_at, created_by_id, updated_by_id) FROM stdin;
-3	Updates to the Constitution	2026-05-11 07:02:20.421072	2026-05-11 07:02:20.421072	2026-05-11 07:02:20.421072	1	1
-4	Motion of No Confidence	2026-05-11 07:02:20.445369	2026-05-11 07:02:20.445369	2026-05-11 07:02:20.445369	1	1
-1	Info Action	2026-05-14 07:22:17.396	2026-05-14 07:22:21.058	2026-05-14 07:22:21.055	1	1
-2	Treasury requests	2026-05-14 07:22:38.017	2026-05-14 07:22:41.254	2026-05-14 07:22:41.251	1	1
+3	Updates to the Constitution	2026-05-11 07:02:20.421072	2026-05-11 07:02:20.421072	2026-05-11 07:02:20.421072	\N	\N
+4	Motion of No Confidence	2026-05-11 07:02:20.445369	2026-05-11 07:02:20.445369	2026-05-11 07:02:20.445369	\N	\N
+1	Info Action	2026-05-14 07:22:17.396	2026-05-14 07:22:21.058	2026-05-14 07:22:21.055	\N	\N
+2	Treasury requests	2026-05-14 07:22:38.017	2026-05-14 07:22:41.254	2026-05-14 07:22:41.251	\N	\N
 \.
 
 
