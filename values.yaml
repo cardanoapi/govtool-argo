@@ -2,24 +2,17 @@ global:
   namespace: govtool
   imagePullPolicy: IfNotPresent
 
+pdfDbMigration:
+    enabled: false
+    dumpSecretName: govtool-pdf-db-dump
+    dumpFileName: proposal_pillar.dump
+    dbHost: govtool-pdf-db
+    dbName: postgres
+    dbUserSecret: govtool-pdf-db
+
 backendConfig:
   enabled: true
   secretName: govtool-backend-config
-  configJson: |
-    {
-      "dbsyncconfig": {
-        "host": "",
-        "dbname": "",
-        "user": "",
-        "password": "",
-        "port": 
-      },
-      "port": 9876,
-      "host": "0.0.0.0",
-      "cachedurationseconds": 20,
-      "sentrydsn": "",
-      "sentryenv": ""
-    }
 
 services:
   backend:
@@ -84,13 +77,10 @@ services:
     containerPort: 3000
     servicePort: 80
     env:
-      DATABASE_HOST: ""
-      DATABASE_PORT: ""
-      DATABASE_NAME: ""
-      DATABASE_USER: ""
-      DATABASE_PASSWORD: ""
       IPFS_GATEWAY: "https://ipfs.io/ipfs"
-      PDF_API_URL: ""
+      PDF_API_URL: "/api/pdf"
+    envFromSecrets:
+      - govtool-outcomes-db
 
   pdf-db:
     enabled: true
@@ -100,12 +90,18 @@ services:
       tag: 16-alpine
     containerPort: 5432
     servicePort: 5432
-    env:
-      POSTGRES_DB: "postgres"
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "pdf-postgres"
+    envFromSecrets:
+      - govtool-pdf-db
+    nodeSelector:
+      govtool-pdf-db: "true"
     volume:
-      enabled
+      enabled: true
+      type: hostPath
+      name: db-data
+      mountPath: /var/lib/postgresql/data
+      hostPath: /var/lib/govtool/pdf-postgres
+      
+
   pdf:
     enabled: true
     replicaCount: 1
@@ -115,25 +111,18 @@ services:
     containerPort: 1337
     servicePort: 80
     env:
-      ADMIN_JWT_SECRET: ""
-      API_TOKEN_SALT: ""
-      APP_KEYS: ""
       DATABASE_NAME: "postgres"
       DATABASE_HOST: "govtool-pdf-db"
-      DATABASE_USERNAME: "postgres"
-      DATABASE_PASSWORD: "pdf-postgres"
       DATABASE_PORT: "5432"
       DATABASE_CLIENT: "postgres"
       DATABASE_SSL: "false"
       GOVTOOL_API_BASE_URL: "http://govtool-backend"
-      JWT_SECRET: ""
-      JWT_SECRET_EXPIRES: "1d"
       NODE_ENV: "production"
-      REFRESH_SECRET: ""
-      REFRESH_TOKEN_EXPIRES: "1d"
-      TRANSFER_TOKEN_SALT: ""
       POSTGRESQL_REPLICATION_USE_PASSFILE: ""
-
+      REFRESH_TOKEN_EXPIRES: 30d
+      JWT_SECRET_EXPIRES: 15m
+    envFromSecrets: 
+       - govtool-pdf-env
 resources:
   default:
     requests:
@@ -150,7 +139,7 @@ ingress:
     enabled: false
     secretName: govtool-tls
   hosts:
-    - host: govtool.local
+    - host: k8s.dev.gov.tools
       paths:
         - path: /api/metadata(/|$)(.*)
           service: metadata
