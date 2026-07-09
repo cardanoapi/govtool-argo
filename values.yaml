@@ -3,7 +3,7 @@ global:
   imagePullPolicy: IfNotPresent
 
 pdfDbMigration:
-    enabled: true
+    enabled: false
     configMapName: govtool-pdf-db-migration
     fileName: schema.sql
     dbHost: govtool-pdf-db
