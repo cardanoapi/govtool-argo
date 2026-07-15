@@ -1,0 +1,158 @@
+global:
+  namespace: govtool
+  imagePullPolicy: IfNotPresent
+
+pdfDbMigration:
+    enabled: false
+    configMapName: govtool-pdf-db-migration
+    fileName: schema.sql
+    dbHost: govtool-pdf-db
+    dbName: postgres
+    dbUserSecret: govtool-pdf-db
+
+backendConfig:
+  enabled: true
+  secretName: govtool-backend-config
+
+services:
+  backend:
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: ghcr.io/intersectmbo/govtool-backend
+      tag: ff5e43c1d69eac920607d325c7965d5dadc68cc3
+    containerPort: 9876
+    servicePort: 80
+    command:
+      - /usr/local/bin/vva-be
+    args:
+      - -c
+      - /run/secrets/config.json
+      - start-app
+    configMount:
+      enabled: true
+      secretName: govtool-backend-config
+      mountPath: /run/secrets/config.json
+      subPath: config.json
+
+  frontend:
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: ghcr.io/intersectmbo/govtool-frontend
+      tag: ff5e43c1d69eac920607d325c7965d5dadc68cc3
+    containerPort: 80
+    servicePort: 80
+    env:
+      VIRTUAL_HOST: "https://localhost"
+      VITE_BASE_URL: "/api"
+      VITE_METADATA_API_URL: "/api/metadata"
+      VITE_APP_ENV: "test"
+      VITE_NETWORK_FLAG: "0"
+      VITE_IS_PROPOSAL_DISCUSSION_FORUM_ENABLED: "true"
+      VITE_IS_GOVERNANCE_OUTCOMES_PILLAR_ENABLED: "true"
+      VITE_IPFS_GATEWAY: "https://ipfs.io/ipfs"
+      VITE_PDF_API_URL: "/api/pdf"
+      VITE_OUTCOMES_API_URL: "/api/outcomes"
+
+  metadata:
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: ghcr.io/intersectmbo/govtool-metadata-validation
+      tag: ff5e43c1d69eac920607d325c7965d5dadc68cc3
+    containerPort: 3000
+    servicePort: 80
+    env:
+      PORT: "3000"
+      IPFS_GATEWAY: "https://ipfs.io/ipfs"
+      IPFS_PROJECT_ID: ""
+
+  outcomes:
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: ghcr.io/intersectmbo/govtool-outcomes-pillar-backend
+      tag: acf1032dae36691f8bc6af2b8e90a9b7917a557e-91
+    containerPort: 3000
+    servicePort: 80
+    env:
+      IPFS_GATEWAY: "https://ipfs.io/ipfs"
+      PDF_API_URL: "/api/pdf"
+    envFromSecrets:
+      - govtool-outcomes-db
+
+  pdf-db:
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: postgres
+      tag: 16-alpine
+    containerPort: 5432
+    servicePort: 5432
+    envFromSecrets:
+      - govtool-pdf-db
+    nodeSelector:
+      govtool-pdf-db: "true"
+    volume:
+      enabled: true
+      type: hostPath
+      name: db-data
+      mountPath: /var/lib/postgresql/data
+      hostPath: /var/lib/govtool/pdf-postgres
+      
+
+  pdf:
+    enabled: true
+    replicaCount: 1
+    image:
+      repository: ghcr.io/intersectmbo/govtool-proposal-pillar-backend
+      tag: dev-0c26f0741ddfb29ed3d5436afede9962f6e72bfc-385
+    containerPort: 1337
+    servicePort: 80
+    env:
+      DATABASE_NAME: "postgres"
+      DATABASE_HOST: "govtool-pdf-db"
+      DATABASE_PORT: "5432"
+      DATABASE_CLIENT: "postgres"
+      DATABASE_SSL: "false"
+      GOVTOOL_API_BASE_URL: "http://govtool-backend"
+      NODE_ENV: "production"
+      POSTGRESQL_REPLICATION_USE_PASSFILE: ""
+      REFRESH_TOKEN_EXPIRES: 30d
+      JWT_SECRET_EXPIRES: 15m
+    envFromSecrets: 
+       - govtool-pdf-env
+resources:
+  default:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1024Mi
+
+ingress:
+  enabled: true
+  className: nginx
+  tls:
+    enabled: false
+    secretName: govtool-tls
+  hosts:
+    - host: k8s.dev.gov.tools
+      paths:
+        - path: /api/metadata(/|$)(.*)
+          service: metadata
+          port: 80
+        - path: /api/outcomes(/|$)(.*)
+          service: outcomes
+          port: 80
+        - path: /api/pdf(/|$)(.*)
+          service: pdf
+          port: 80
+        - path: /api(/|$)(.*)
+          service: backend
+          port: 80
+        - path: /()(.*)
+          service: frontend
+          port: 80
