@@ -22,26 +22,6 @@ GitHub Repository
   -> GovTool Services
 ```
 
-## Kubernetes Cluster
-
-### Context
-
-```txt
-Context: govtool-k8s-kushal-admin
-Cluster: govtool-k8s
-Namespace: govtool
-```
-
-### Nodes
-
-```txt
-k8s-govtool-control-0   control-plane
-k8s-govtool-control-1   control-plane
-k8s-govtool-control-2   control-plane
-k8s-govtool-worker-1    worker
-k8s-govtool-worker-2    worker
-```
-
 ## Services
 
 The following GovTool services are deployed in the `govtool` namespace:
@@ -64,40 +44,9 @@ Host: k8s.dev.gov.tools
 Ingress class: nginx
 ```
 
-### Routes
-
-```txt
-/                  -> govtool-frontend
-/api               -> govtool-backend
-/api/metadata      -> govtool-metadata
-/api/outcomes      -> govtool-outcomes
-/api/pdf           -> govtool-pdf
-```
-
 ## Argo CD
 
 Argo CD is installed in the `argocd` namespace and manages the GovTool deployment from GitHub.
-
-### Application
-
-```txt
-Application: govtool
-Namespace: argocd
-Repository: https://github.com/cardanoapi/govtool-argo.git
-Branch: main
-Chart path: .
-Target namespace: govtool
-```
-
-### Deployment Flow
-
-```txt
-Commit pushed to GitHub
-  -> Argo CD detects the change
-  -> Argo CD renders the Helm chart
-  -> Argo CD syncs Kubernetes resources
-  -> GovTool stack is updated
-```
 
 ## Helm Chart
 
@@ -130,9 +79,6 @@ helm upgrade --install govtool . -n govtool --create-namespace
 ```
 
 ## Required Secrets
-
-Runtime secrets are created directly in Kubernetes and are not committed to Git.
-
 Required secrets:
 
 ```txt
@@ -268,8 +214,6 @@ pdfDbMigration:
 
 This prevents the migration Job from running again on every Argo sync.
 
-## Argo CD Usage
-
 ### Check Application
 
 ```bash
@@ -280,14 +224,6 @@ kubectl get application govtool -n argocd
 
 ```bash
 kubectl describe application govtool -n argocd
-```
-
-### Force Refresh
-
-```bash
-kubectl annotate application govtool -n argocd \
-  argocd.argoproj.io/refresh=hard \
-  --overwrite
 ```
 
 ### Check Resources
